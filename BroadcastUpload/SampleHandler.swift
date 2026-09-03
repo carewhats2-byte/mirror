@@ -48,7 +48,7 @@ final class SampleHandler: RPBroadcastSampleHandler {
         autoreleasepool {
             let image = CIImage(cvPixelBuffer: pixelBuffer)
             let options: [CIImageRepresentationOption: Any] = [
-                .lossyCompressionQuality: 0.62
+                CIImageRepresentationOption(rawValue: kCGImageDestinationLossyCompressionQuality as String): 0.62
             ]
 
             guard let jpeg = ciContext.jpegRepresentation(
