@@ -1,3 +1,22 @@
-git add codemagic.yaml
-git commit -m 'Add first workflow'
-git push
+workflows:
+  lanmirror:
+    name: LanMirror Compile
+    environment:
+      xcode: latest
+
+    scripts:
+      - name: Compile
+        script: |
+          xcodebuild \
+            -project LanMirror.xcodeproj \
+            -scheme LanMirror \
+            -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+    artifacts:
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/**/*.app
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/**/*.appex
