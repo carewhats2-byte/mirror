@@ -7,7 +7,7 @@ workflows:
     scripts:
       - name: Build unsigned
         script: |
-          set -e
+          set -euo pipefail
           rm -rf build Payload LanMirror.ipa
 
           xcodebuild \
@@ -21,9 +21,10 @@ workflows:
             CODE_SIGN_IDENTITY="" \
             build
 
-      - name: Validate app executables
+      - name: Validate embedded Broadcast extension
         script: |
-          set -e
+          set -euo pipefail
+
           APP="build/Build/Products/Release-iphoneos/LanMirror.app"
           EXT="$APP/PlugIns/BroadcastUpload.appex"
 
@@ -32,18 +33,22 @@ workflows:
 
           APP_EXEC=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP/Info.plist")
           EXT_EXEC=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$EXT/Info.plist")
+          EXT_POINT=$(/usr/libexec/PlistBuddy -c 'Print :NSExtension:NSExtensionPointIdentifier' "$EXT/Info.plist")
 
           echo "Main executable: $APP_EXEC"
           echo "Extension executable: $EXT_EXEC"
+          echo "Extension point: $EXT_POINT"
 
           test -n "$APP_EXEC"
           test -n "$EXT_EXEC"
           test -f "$APP/$APP_EXEC"
           test -f "$EXT/$EXT_EXEC"
+          test "$EXT_POINT" = "com.apple.broadcast-services-upload"
 
-      - name: Package unsigned signable IPA
+      - name: Package unsigned IPA
         script: |
-          set -e
+          set -euo pipefail
+
           APP="build/Build/Products/Release-iphoneos/LanMirror.app"
 
           rm -rf Payload LanMirror.ipa
@@ -53,8 +58,15 @@ workflows:
           find Payload -name _CodeSignature -type d -prune -exec rm -rf {} + || true
           find Payload -name embedded.mobileprovision -type f -delete || true
 
+          test -d "Payload/LanMirror.app/PlugIns/BroadcastUpload.appex"
+          test -f "Payload/LanMirror.app/LanMirror"
+          test -f "Payload/LanMirror.app/PlugIns/BroadcastUpload.appex/BroadcastUpload"
+
           /usr/bin/zip -qry LanMirror.ipa Payload
           /usr/bin/unzip -t LanMirror.ipa
+
+          echo "IPA contains:"
+          /usr/bin/unzip -l LanMirror.ipa | grep -E 'LanMirror.app/(LanMirror|PlugIns/BroadcastUpload.appex/(BroadcastUpload|Info.plist))'
 
     artifacts:
       - LanMirror.ipa

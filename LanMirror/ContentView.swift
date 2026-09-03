@@ -1,52 +1,82 @@
 import SwiftUI
 import ReplayKit
+import UIKit
 
 private let mirrorHost = "192.168.100.196"
 private let mirrorPort = 6969
+private let broadcastExtensionBundleID = "com.example.LanMirror.BroadcastUpload"
 
 struct BroadcastPicker: UIViewRepresentable {
     func makeUIView(context: Context) -> RPSystemBroadcastPickerView {
-        let picker = RPSystemBroadcastPickerView(frame: .zero)
-        picker.preferredExtension = "com.example.LanMirror.BroadcastUpload"
+        let picker = RPSystemBroadcastPickerView(
+            frame: CGRect(x: 0, y: 0, width: 88, height: 88)
+        )
+
+        picker.preferredExtension = broadcastExtensionBundleID
         picker.showsMicrophoneButton = false
+
+        // Make Apple's real ReplayKit broadcast control very obvious.
+        picker.tintColor = .systemBlue
+        picker.backgroundColor = .secondarySystemBackground
+        picker.layer.cornerRadius = 18
+        picker.layer.borderWidth = 2
+        picker.layer.borderColor = UIColor.systemBlue.cgColor
+        picker.clipsToBounds = true
+
         return picker
     }
 
-    func updateUIView(_ uiView: RPSystemBroadcastPickerView, context: Context) {}
+    func updateUIView(_ uiView: RPSystemBroadcastPickerView, context: Context) {
+        uiView.preferredExtension = broadcastExtensionBundleID
+        uiView.showsMicrophoneButton = false
+    }
 }
 
 struct ContentView: View {
     var body: some View {
         NavigationView {
-            Form {
-                Section(header: Text("PC receiver")) {
-                    Text("ws://\(mirrorHost):\(mirrorPort)/ws")
-                        .textSelection(.enabled)
+            VStack(spacing: 22) {
+                Spacer()
 
-                    Text("Change mirrorHost in BroadcastUpload/SampleHandler.swift before building if your PC LAN IP is different.")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                }
+                Text("LAN Mirror")
+                    .font(.largeTitle)
+                    .bold()
 
-                Section(header: Text("Start mirroring")) {
-                    HStack {
-                        Spacer()
-                        BroadcastPicker()
-                            .frame(width: 64, height: 64)
-                        Spacer()
-                    }
+                Text("PC: \(mirrorHost):\(mirrorPort)")
+                    .font(.headline)
 
-                    Text("Tap the broadcast button, choose LanMirror Broadcast, then start the broadcast. Microphone capture is hidden.")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                }
+                Text("Tap the blue broadcast icon below.")
+                    .font(.title3)
+                    .multilineTextAlignment(.center)
 
-                Section(header: Text("Viewer")) {
-                    Text("Open http://\(mirrorHost):\(mirrorPort) in a browser on your LAN.")
-                        .textSelection(.enabled)
-                }
+                BroadcastPicker()
+                    .frame(width: 88, height: 88)
+
+                Text("START BROADCAST")
+                    .font(.headline)
+                    .bold()
+
+                Text("iOS will open Apple's Broadcast sheet. Choose “LanMirror Broadcast”, then tap Start Broadcast.")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+
+                Divider()
+                    .padding(.horizontal, 24)
+
+                Text("Streaming target")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                Text("ws://\(mirrorHost):\(mirrorPort)/ws")
+                    .font(.system(.body, design: .monospaced))
+                    .textSelection(.enabled)
+
+                Spacer()
             }
-            .navigationTitle("LAN Mirror")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .navigationBarHidden(true)
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }

@@ -1,37 +1,27 @@
 # LanMirror
 
-Native iOS LAN screen mirroring prototype using ReplayKit Broadcast Upload Extension + WebSocket JPEG frames.
+Native iOS ReplayKit LAN screen mirroring project.
 
-## Receiver
+## Hardcoded PC address
 
-The current receiver is hardcoded in both the app UI and broadcast extension as:
+`192.168.100.196:6969`
 
-- PC LAN IP: `192.168.100.196`
-- Port: `6969`
-- WebSocket: `ws://192.168.100.196:6969/ws`
-- Browser viewer: `http://192.168.100.196:6969`
+The Broadcast Upload Extension sends JPEG frames to:
 
-If your PC has a different LAN IP, edit `mirrorHost` in:
+`ws://192.168.100.196:6969/ws`
 
-- `BroadcastUpload/SampleHandler.swift`
-- `LanMirror/ContentView.swift` (display only)
+## Broadcast button
 
-No App Group entitlement is used. This makes the unsigned build simpler for external IPA signing.
+The main app contains Apple's real `RPSystemBroadcastPickerView`.
+Open the app and tap the large blue ReplayKit broadcast icon.
 
-## Python server
+The built app must contain:
 
-```bash
-cd Server
-pip install -r requirements.txt
-python server.py
-```
+`LanMirror.app/PlugIns/BroadcastUpload.appex`
 
-Allow TCP port `6969` through your PC firewall and make sure the iPhone and PC are on the same LAN.
+The Codemagic workflow fails the build if that extension is missing.
 
-## Codemagic
+## Signing
 
-`codemagic.yaml` builds with signing disabled and packages:
-
-`LanMirror.ipa`
-
-The IPA remains unsigned. A signing tool must sign the embedded `BroadcastUpload.appex` and then the main `LanMirror.app` with compatible provisioning.
+Codemagic creates an unsigned IPA so it can be signed afterward.
+No App Group entitlement is used.
