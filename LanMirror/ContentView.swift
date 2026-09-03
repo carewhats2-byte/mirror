@@ -22,7 +22,7 @@ struct ContentView: View {
     @State private var saved = false
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section("PC receiver") {
                     TextField("PC LAN IP", text: $host)
