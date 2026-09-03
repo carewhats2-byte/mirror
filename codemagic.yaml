@@ -12,11 +12,18 @@ workflows:
             -scheme LanMirror \
             -configuration Debug \
             -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             build
 
+      - name: Make IPA
+        script: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Debug-iphoneos/LanMirror.app Payload/
+          zip -r LanMirror.ipa Payload
+
     artifacts:
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/**/*.app
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/**/*.appex
+      - LanMirror.ipa
+      - build/Build/Products/Debug-iphoneos/LanMirror.app
