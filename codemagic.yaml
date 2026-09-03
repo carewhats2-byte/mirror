@@ -7,6 +7,7 @@ workflows:
     scripts:
       - name: Build unsigned
         script: |
+          set -e
           rm -rf build Payload LanMirror.ipa
 
           xcodebuild \
@@ -20,10 +21,30 @@ workflows:
             CODE_SIGN_IDENTITY="" \
             build
 
-      - name: Package unsigned IPA
+      - name: Validate app executables
         script: |
+          set -e
           APP="build/Build/Products/Release-iphoneos/LanMirror.app"
+          EXT="$APP/PlugIns/BroadcastUpload.appex"
+
           test -d "$APP"
+          test -d "$EXT"
+
+          APP_EXEC=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP/Info.plist")
+          EXT_EXEC=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$EXT/Info.plist")
+
+          echo "Main executable: $APP_EXEC"
+          echo "Extension executable: $EXT_EXEC"
+
+          test -n "$APP_EXEC"
+          test -n "$EXT_EXEC"
+          test -f "$APP/$APP_EXEC"
+          test -f "$EXT/$EXT_EXEC"
+
+      - name: Package unsigned signable IPA
+        script: |
+          set -e
+          APP="build/Build/Products/Release-iphoneos/LanMirror.app"
 
           rm -rf Payload LanMirror.ipa
           mkdir -p Payload
