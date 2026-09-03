@@ -1,7 +1,6 @@
 workflows:
   lanmirror:
     name: LanMirror Unsigned IPA
-
     environment:
       xcode: latest
 
@@ -21,22 +20,21 @@ workflows:
             CODE_SIGN_IDENTITY="" \
             build
 
-      - name: Prepare signable IPA
+      - name: Package unsigned IPA
         script: |
           APP="build/Build/Products/Release-iphoneos/LanMirror.app"
+          test -d "$APP"
 
-          rm -rf "$APP/_CodeSignature"
-          rm -f "$APP/embedded.mobileprovision"
-
-          if [ -d "$APP/PlugIns" ]; then
-            find "$APP/PlugIns" -name "_CodeSignature" -type d -prune -exec rm -rf {} \;
-            find "$APP/PlugIns" -name "embedded.mobileprovision" -type f -delete
-          fi
-
+          rm -rf Payload LanMirror.ipa
           mkdir -p Payload
           cp -R "$APP" Payload/LanMirror.app
 
-          zip -qry LanMirror.ipa Payload
+          find Payload -name _CodeSignature -type d -prune -exec rm -rf {} + || true
+          find Payload -name embedded.mobileprovision -type f -delete || true
+
+          /usr/bin/zip -qry LanMirror.ipa Payload
+          /usr/bin/unzip -t LanMirror.ipa
 
     artifacts:
       - LanMirror.ipa
+      - build/Build/Products/Release-iphoneos/LanMirror.app

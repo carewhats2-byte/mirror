@@ -1,9 +1,8 @@
 import SwiftUI
 import ReplayKit
 
-private let appGroupID = "group.com.example.LanMirror"
-private let hostKey = "mirrorHost"
-private let portKey = "mirrorPort"
+private let mirrorHost = "192.168.100.196"
+private let mirrorPort = 6969
 
 struct BroadcastPicker: UIViewRepresentable {
     func makeUIView(context: Context) -> RPSystemBroadcastPickerView {
@@ -17,34 +16,19 @@ struct BroadcastPicker: UIViewRepresentable {
 }
 
 struct ContentView: View {
-    @State private var host = "192.168.100.196"
-    @State private var port = "6969"
-    @State private var saved = false
-
     var body: some View {
         NavigationView {
             Form {
-                Section("PC receiver") {
-                    TextField("PC LAN IP", text: $host)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .keyboardType(.numbersAndPunctuation)
+                Section(header: Text("PC receiver")) {
+                    Text("ws://\(mirrorHost):\(mirrorPort)/ws")
+                        .textSelection(.enabled)
 
-                    TextField("Port", text: $port)
-                        .keyboardType(.numberPad)
-
-                    Button("Save receiver") {
-                        saveReceiver()
-                    }
-
-                    if saved {
-                        Text("Saved: ws://\(host):\(port)/ws")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
+                    Text("Change mirrorHost in BroadcastUpload/SampleHandler.swift before building if your PC LAN IP is different.")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
                 }
 
-                Section("Start mirroring") {
+                Section(header: Text("Start mirroring")) {
                     HStack {
                         Spacer()
                         BroadcastPicker()
@@ -54,42 +38,16 @@ struct ContentView: View {
 
                     Text("Tap the broadcast button, choose LanMirror Broadcast, then start the broadcast. Microphone capture is hidden.")
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(.secondary)
                 }
 
-                Section("Viewer") {
-                    Text("Open http://\(host):\(port) in a browser on your LAN.")
+                Section(header: Text("Viewer")) {
+                    Text("Open http://\(mirrorHost):\(mirrorPort) in a browser on your LAN.")
                         .textSelection(.enabled)
                 }
             }
             .navigationTitle("LAN Mirror")
-            .onAppear(perform: loadReceiver)
         }
-    }
-
-    private func loadReceiver() {
-        guard let defaults = UserDefaults(suiteName: appGroupID) else { return }
-        host = defaults.string(forKey: hostKey) ?? "192.168.1.42"
-        let storedPort = defaults.integer(forKey: portKey)
-        port = storedPort > 0 ? String(storedPort) : "6969"
-    }
-
-    private func saveReceiver() {
-        let cleanHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
-        let cleanPort = Int(port) ?? 6969
-
-        guard !cleanHost.isEmpty, (1...65535).contains(cleanPort) else {
-            saved = false
-            return
-        }
-
-        guard let defaults = UserDefaults(suiteName: appGroupID) else {
-            saved = false
-            return
-        }
-
-        defaults.set(cleanHost, forKey: hostKey)
-        defaults.set(cleanPort, forKey: portKey)
-        saved = true
+        .navigationViewStyle(StackNavigationViewStyle())
     }
 }

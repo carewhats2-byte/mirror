@@ -5,9 +5,8 @@ import Foundation
 import ImageIO
 import QuartzCore
 
-private let appGroupID = "group.com.example.LanMirror"
-private let hostKey = "mirrorHost"
-private let portKey = "mirrorPort"
+private let mirrorHost = "192.168.100.196"
+private let mirrorPort = 6969
 
 final class SampleHandler: RPBroadcastSampleHandler {
     private let ciContext = CIContext(options: [.cacheIntermediates: false])
@@ -19,7 +18,7 @@ final class SampleHandler: RPBroadcastSampleHandler {
     private var lastFrameTime: CFTimeInterval = 0
     private var sendingFrame = false
 
-    override func broadcastStarted(withSetupInfo setupInfo: [String : NSObject]?) {
+    override func broadcastStarted(withSetupInfo setupInfo: [String: NSObject]?) {
         connect()
     }
 
@@ -48,7 +47,9 @@ final class SampleHandler: RPBroadcastSampleHandler {
         autoreleasepool {
             let image = CIImage(cvPixelBuffer: pixelBuffer)
             let options: [CIImageRepresentationOption: Any] = [
-                CIImageRepresentationOption(rawValue: kCGImageDestinationLossyCompressionQuality as String): 0.62
+                CIImageRepresentationOption(
+                    rawValue: kCGImageDestinationLossyCompressionQuality as String
+                ): 0.62
             ]
 
             guard let jpeg = ciContext.jpegRepresentation(
@@ -62,12 +63,7 @@ final class SampleHandler: RPBroadcastSampleHandler {
     }
 
     private func connect() {
-        let defaults = UserDefaults(suiteName: appGroupID)
-        let host = defaults?.string(forKey: hostKey) ?? "192.168.1.42"
-        let storedPort = defaults?.integer(forKey: portKey) ?? 0
-        let port = storedPort > 0 ? storedPort : 6969
-
-        guard let url = URL(string: "ws://\(host):\(port)/ws") else {
+        guard let url = URL(string: "ws://\(mirrorHost):\(mirrorPort)/ws") else {
             finishBroadcastWithError(MirrorError.invalidURL)
             return
         }
@@ -83,35 +79,32 @@ final class SampleHandler: RPBroadcastSampleHandler {
         self.socket = socket
         socket.resume()
 
-        // Keep the task active and detect an immediately dead connection.
         socket.sendPing { [weak self] error in
-            guard let self, let error else { return }
+            guard let self = self, let error = error else { return }
             self.finishBroadcastWithError(error)
         }
     }
 
     private func send(_ jpeg: Data) {
-        guard let socket else { return }
+        guard let socket = socket else { return }
 
         sendingFrame = true
         socket.send(.data(jpeg)) { [weak self] error in
-            guard let self else { return }
+            guard let self = self else { return }
             self.sendingFrame = false
 
-            if let error {
-                self.reconnectAfterSendFailure(error)
+            if error != nil {
+                self.reconnectAfterSendFailure()
             }
         }
     }
 
-    private func reconnectAfterSendFailure(_ error: Error) {
+    private func reconnectAfterSendFailure() {
         socket?.cancel(with: .goingAway, reason: nil)
         session?.invalidateAndCancel()
         socket = nil
         session = nil
         sendingFrame = false
-
-        // One reconnect attempt path; future failed sends will repeat this.
         connect()
     }
 }
